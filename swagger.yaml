@@ -1,0 +1,51 @@
+openapi: "3.0.0"
+info:
+  title: An E-Commerce Backend Application
+  description : A fullscale e-commerce backend application providing you with all kinds of routes and roles to test the api
+  version: 1.0.0
+  contact:
+    email: adityasingh@gmail.com
+    url : "www.google.com"
+
+servers:
+  - url : "{protocol}://localhost:4000/api/{version}"
+    description: Used for localhost development 
+    variables:
+      version:
+        enum:
+          - v1
+          - v2
+        default: v1
+      protocol:
+        enum:
+          - http
+          - https
+        default: http
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type : apiKey
+      in : cookie
+      name: token 
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+paths:
+  /dummy:
+    get:
+      tags:
+       - Home
+      summary: Returns a greet message from Developer 
+      responses:
+        200: 
+          description: All good and Success
+          content:
+            application/json:
+              schema:
+                type: String
+                example: "Developer's Message"
+        500: 
+          description: Bad Server Error
+      
