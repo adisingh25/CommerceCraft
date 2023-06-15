@@ -57,18 +57,23 @@ app.use(morgan("tiny"))                                  // gives the api-reques
 //routes
 const home = require('./routes/home')
 const user = require('./routes/user')
+const product = require('./routes/product')
 
 
 
 //router middleware 
 app.use("/api/v1", home)
 app.use("/api/v1", user)
+app.use("/api/v1", product)
+
+
+
 
 
 //for using our ejs file to test file upload 
 app.get("/signuptest", (req, res) => {
     res.render("signuptest");
-  });
+});
 
 //export app js
 module.exports = app
