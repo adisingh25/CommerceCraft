@@ -33,7 +33,7 @@ exports.addProduct = BigPromise(async(req,res,next) => {
     }
 
     req.body.photos = imageArray;
-    req.body.user = req.user.id;
+    req.body.user = req.user.id;                    // we only store the user's id as user in the product database
 
     const product = await Product.create(req.body);
 
@@ -52,7 +52,7 @@ exports.getAllProduct = BigPromise(async(req,res,next) => {
 
     const productsObj = new WhereClause(Product.find(), req.query).search().filter()        // WhereClause returns an object
 
-    let products = await productsObj.base;                  // that object has base which has our entires
+    let products = await productsObj.base;                  // that object has base which has our entries
     const filteredProductCount = products.length
 
     //pagination 1st way 
@@ -62,7 +62,7 @@ exports.getAllProduct = BigPromise(async(req,res,next) => {
 
     //pagination 2nd way
     productsObj.pager(resultperPage)                  //pager is coming from the WhereClause class and can only be applied over the object
-    products = await productsObj.base.clone()        // '.clone()' is a new-way to handle and run multiple queries (like  - and condition1 and condition2 and condition3) #again call run only over the objects of the WhereClause class
+    products = await productsObj.base.clone()        // '.clone()' is a new-way to handle and run multiple queries (like  - and condition1 and condition2 and condition3) #again, call can run only over the objects of the WhereClause class
    
 
     res.status(200).json({
@@ -188,3 +188,92 @@ exports.adminDeleteProduct = BigPromise(async(req,res,next) => {
     })
 
 })
+
+exports.addReview = BigPromise(async(req,res,next) => {
+
+    const {rating, comment, productId} = req.body;
+
+    const review = {
+        user : req.user._id,                   //the middleware gives me all of this
+        name: req.user.name,
+        rating :Number(rating),
+        comment
+    }
+
+    const product = await Product.findById(productId)
+
+    //checking if the user has already added a review
+    const alreadyPresentReviews = product.reviews.find( (rev) => rev.user.toString() === req.user._id.toString() )          // toString is necessary as whatever we receive is a BSON type of object
+
+    if(alreadyPresentReviews) {
+        product.reviews.forEach((rev) => {
+           if ( (rev) => rev.user.toString() === req.user._id.toString() ) {
+                rev.comment = comment;
+                rev.rating = rating
+           }
+        })
+    }
+    else {
+        product.reviews.push(review)
+        product.numberOfReviews = product.reviews.length;
+    }
+
+    product.ratings =  product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+
+    await product.save({ validateBeforeSave: false });
+    
+    res.status(200).json({
+        success: true,
+    });
+
+})
+
+//delete route not working ................
+// exports.deleteReview = BigPromise(async (req, res, next) => {
+//     const { productId } = req.query;
+  
+
+//     const product = await Product.findById(productId);
+//     console.log(product)
+  
+//     const reviews = product.reviews.filter(                               // filter method removes the review that we want to delete
+//       (rev) => rev.user.toString() === req.user._id.toString()
+//     );
+  
+//     const numberOfReviews = reviews.length;
+  
+//     // adjust ratings
+  
+//     ratings =
+//       product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+//       product.reviews.length;
+  
+//     //update the product
+  
+//     await Product.findByIdAndUpdate(
+//       productId,
+//       {
+//         reviews,
+//         ratings,
+//         numberOfReviews,
+//       },
+//       {
+//         new: true,
+//         runValidators: true,
+//         useFindAndModify: false,
+//       }
+//     );
+  
+//     res.status(200).json({
+//       success: true,
+//     });
+// });
+  
+exports.getOnlyReviewsForOneProduct = BigPromise(async (req, res, next) => {
+    const product = await Product.findById(req.query.id);
+  
+    res.status(200).json({
+      success: true,
+      reviews: product.reviews,
+    });
+});
